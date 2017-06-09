@@ -35,4 +35,4 @@ class VOCParser(object):
         wid = int(size_node.find('width').text)
         hei = int(size_node.find('height').text)
         depth = int(size_node.find('depth').text)
-        return (hei, wid, depth)
+        return hei, wid, depth

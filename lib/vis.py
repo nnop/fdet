@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def draw_bbox(ax, bbox, text='', color='r', linewidth=2):
+def draw_bbox(ax, bbox, text='', color='r', linewidth=1):
     xmin, ymin, xmax, ymax = bbox
     coords = (xmin, ymin), xmax-xmin+1, ymax-ymin+1
     ax.add_patch(plt.Rectangle(*coords, fill=False, 
