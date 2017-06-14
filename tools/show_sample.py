@@ -31,6 +31,9 @@ def get_image_xml_paths(args):
     return image_path, xml_path
 
 if __name__ == "__main__":
+    """
+    use image/xml path or sample-id as input
+    """
     parser = argparse.ArgumentParser()
     samp_g = parser.add_mutually_exclusive_group()
     samp_g.add_argument('--image-path')
@@ -41,8 +44,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     image_path, xml_path = get_image_xml_paths(args)
-    sample_id = path.split(image_path)[1]
-    sample_id = path.splitext(sample_id)[0]
+    tmp = path.split(image_path)[1]
+    sample_id = path.splitext(tmp)[0]
 
     # check xml info
     voc_xml = VOCParser(xml_path)
@@ -58,10 +61,18 @@ if __name__ == "__main__":
     colors = plt.cm.hsv
     plt.imshow(im)
     ax = plt.gca()
+    cls_colors = {}
     for obj in objects:
         name = obj['name']
         bbox = obj['bbox']
-        draw_bbox(ax, bbox, color=colors(random.random()))
+        if name not in cls_colors:
+            # show name on first detection
+            cls_colors[name] = colors(random.random())
+            c = cls_colors[name]
+            draw_bbox(ax, bbox, text=name, color=c)
+        else:
+            c = cls_colors[name]
+            draw_bbox(ax, bbox, color=c)
 
     if args.save:
         out_fn = sample_id+'.png'
