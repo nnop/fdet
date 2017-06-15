@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import _init_paths
 from detector import Detector
 from vis import show_detection
-from utils import load_labelmap
+from caffeutils import load_labelmap
 
 
 if __name__ == "__main__":
