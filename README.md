@@ -11,3 +11,6 @@
 - `experiments`: files relative to a specific experiment
 - `models`: pretrained models
 
+# pipeline
+
+1. create labelmap file: `tools/create_labelmap.py`
