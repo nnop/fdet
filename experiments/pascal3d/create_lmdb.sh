@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 lmdb_dir="data/pascal3d/lmdb"
 if [[ ! -d $lmdb_dir ]]; then
-  mkdir lmdb_dir
+  mkdir $lmdb_dir
 fi
 
 for split in train val test; do
