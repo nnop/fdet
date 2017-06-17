@@ -29,7 +29,10 @@ def parse_ann(ann_p, classes):
         bbox = psn['body']['bbox']
         body = {}
         body['category_id'] = 'person'
-        body['aziLabel'] = classes.index(psn['body']['label'])
+        try:
+            body['aziLabel'] = classes.index(psn['body']['label'])
+        except ValueError as e:
+            body['aziLabel'] = len(classes)
         body['aziLabelFlip'] = body['aziLabel']
         body['difficult'] = False
         body['iscrowd'] = False
@@ -58,8 +61,9 @@ if __name__ == "__main__":
     ori_ann_dir = 'data/pose/images'
     image_dir = ori_ann_dir
     dst_ann_dir = 'data/pose/json'
-    dump_list_path = 'data/pose/trainlist.txt'
-    class_file = 'data/pose/bodylabels.txt'
+    dump_train_path = 'data/pose/train_list.txt'
+    dump_val_path = 'data/pose/val_list.txt'
+    class_file = 'data/pose/body_labels.txt'
 
     make_if_not_exists(dst_ann_dir)
     with open(class_file) as f:
@@ -74,4 +78,6 @@ if __name__ == "__main__":
     val_ann_files = ann_files[n_tr:]
 
     dump_list(train_ann_files, classes, image_dir, 'data/pose', dst_ann_dir,
-            dump_list_path)
+            dump_train_path)
+    dump_list(val_ann_files, classes, image_dir, 'data/pose', dst_ann_dir,
+            dump_val_path)
