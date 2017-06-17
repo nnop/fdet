@@ -5,17 +5,17 @@ from caffe.proto import caffe_pb2
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--save-path', help='folder to store the labelmap file')
-    parser.add_argument('--class-names', nargs='+', help='class names')
+    parser.add_argument('--classes', nargs='+', help='class names')
     parser.add_argument('--class-file', help='file store class names')
+    parser.add_argument('--save-path', help='folder to store the labelmap file')
     args = parser.parse_args()
-    if args.class_names:
-        class_names = args.class_names
+    if args.classes:
+        class_names = args.classes
     elif args.class_file:
         with open(args.class_file) as f:
             class_names = f.read().split()
     else:
-        raise ValueError('wrong argument')
+        raise ValueError('class file {} not exists.'.format(args.class_file))
     labelmap = caffe_pb2.LabelMap()
     idx = 0
     item = labelmap.item.add()
