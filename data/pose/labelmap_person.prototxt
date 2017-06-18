@@ -1,0 +1,10 @@
+item {
+  name: "null"
+  label: 0
+  display_name: "null"
+}
+item {
+  name: "person"
+  label: 1
+  display_name: "person"
+}
