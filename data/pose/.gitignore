@@ -1,0 +1,5 @@
+*
+!.gitignore
+!labelmap_person.prototxt
+!body_labels.txt
+!head_labels.txt
