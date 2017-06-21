@@ -34,8 +34,8 @@ def copy_samples(src_root, dst_root, samples, save_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir')
-    parser.add_argument('--save-dir')
+    parser.add_argument('--data-dir', required=True)
+    parser.add_argument('--save-dir', required=True)
     parser.add_argument('--num', default=10, type=int)
     args = parser.parse_args()
 
