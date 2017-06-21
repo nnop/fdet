@@ -45,7 +45,7 @@ def dump_list(ann_files, classes, image_dir, root_dir, dump_ann_dir, dump_list_p
     # split all list
     for ann_p in ann_files:
         samp_name = main_name(ann_p)
-        image_p = osp.join(image_dir, samp_name+'.jpg')
+        image_p = osp.join(image_dir, samp_name+'.png')
         dst_json_p = osp.join(dump_ann_dir, samp_name+'.json')
         info = parse_ann(ann_p, classes)
         with open(dst_json_p, 'w') as f:
@@ -58,10 +58,10 @@ def dump_list(ann_files, classes, image_dir, root_dir, dump_ann_dir, dump_list_p
     print 'dump list to ' + dump_list_path
 
 if __name__ == "__main__":
-    root_dir = '/Users/mac/datasets/facethink/gen/'
-    ori_ann_dir = '/Users/mac/datasets/facethink/gen/json/'
-    image_dir = '/Users/mac/datasets/facethink/gen/jpg/'
-    dump_ann_dir = '/Users/mac/datasets/facethink/gen/new_json/'
+    root_dir = 'data/pose'
+    ori_ann_dir = 'data/pose/test_data'
+    image_dir = ori_ann_dir
+    dump_ann_dir = 'data/pose/test_json'
     dump_list_path = 'data/pose/test_list.txt'
     class_file = 'data/pose/body_labels.txt'
 

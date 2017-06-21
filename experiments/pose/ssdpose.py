@@ -6,6 +6,7 @@ import caffe
 from caffe.model_libs import *
 from google.protobuf import text_format
 
+import lmdb
 import math
 import os
 import shutil
@@ -95,6 +96,9 @@ def makeBatchSampler():
     ]
     return batch_sampler
 
+def get_db_size(db):
+    with lmdb.open(db) as env:
+        return env.stat()['entries']
 
 def run_main():
     share_pose = True
@@ -102,7 +106,6 @@ def run_main():
     num_poses = 8
     pose_weight = 1.0
     max_iter = 50000
-    num_test = 3001
     step_size = [30000, 40000]
 
     run_soon = False
@@ -116,7 +119,11 @@ def run_main():
     # The database file for training data. Created by data/VOC0712/create_data.sh
     train_data = 'data/pose/lmdb/train_lmdb/'
     val_data = 'data/pose/lmdb/val_lmdb/'
-    # test_data = 'data/pose/lmdb/test_lmdb/'
+    test_data = 'data/pose/lmdb/test_lmdb/'
+    num_val = get_db_size(val_data)
+    num_test = get_db_size(test_data)
+    print('val num:', num_val)
+    print('test num:', num_test)
 
     # Specify the batch sampler.
     resize_width = 300
@@ -289,9 +296,9 @@ def run_main():
 
     # Evaluate on whole test set.
     #num_test_image = args.get_opts('num_val')
-    num_test_image = num_test
     test_batch_size = 1
-    test_iter = num_test_image / test_batch_size
+    val_iter = num_val / test_batch_size
+    test_iter = num_test / test_batch_size
 
     train_solver_param = {
         # Train parameters
@@ -312,7 +319,7 @@ def run_main():
         'debug_info': False,
         'snapshot_after_train': True,
         # Test parameters
-        'test_iter': [test_iter],
+        'test_iter': [val_iter],
         'test_interval': 1000,
         'eval_type': "detection",
         'ap_version': "11point",
@@ -320,14 +327,14 @@ def run_main():
         }
     test_solver_param = {
         # Train parameters
-        'base_lr': base_lr,
+        'base_lr': 0.0,
         'weight_decay': 0.0005,
         'lr_policy': "multistep",
         'stepvalue': step_size,
         'gamma': 0.1,
         'momentum': 0.9,
         'iter_size': iter_size,
-        'max_iter': max_iter,
+        'max_iter': 0,
         'snapshot': 2000,
         'display': 10,
         'average_loss': 10,
@@ -335,13 +342,13 @@ def run_main():
         'solver_mode': solver_mode,
         'device_id': device_id,
         'debug_info': False,
-        'snapshot_after_train': True,
+        'snapshot_after_train': False,
         # Test parameters
         'test_iter': [test_iter],
         'test_interval': 1,
         'eval_type': "detection",
         'ap_version': "11point",
-        'test_initialization': False,
+        'test_initialization': True,
         }
     # parameters for generating detection output.
     det_out_param = {
@@ -351,13 +358,13 @@ def run_main():
         'share_pose': share_pose,
         'background_label_id': background_label_id,
         'nms_param': {'nms_threshold': 0.45, 'top_k': 400},
-        'save_output_param': {
-            'output_directory': output_result_dir,
-            'output_name_prefix': "comp4_det_test_",
-            'output_format': "VOC",
-            'label_map_file': label_map_file,
-            'num_test_image': num_test_image,
-            },
+        # 'save_output_param': {
+        #     'output_directory': output_result_dir,
+        #     'output_name_prefix': "comp4_det_test_",
+        #     'output_format': "VOC",
+        #     'label_map_file': label_map_file,
+        #     'num_test_image': num_test_image,
+        #     },
         'keep_top_k': 200,
         'confidence_threshold': 0.01,
         'code_type': code_type,
@@ -376,7 +383,7 @@ def run_main():
     # Check file.
     check_if_exist(train_data)
     check_if_exist(val_data)
-    # check_if_exist(test_data)
+    check_if_exist(test_data)
     check_if_exist(label_map_file)
     check_if_exist(pretrain_model)
     make_if_not_exist(save_dir)
@@ -471,52 +478,52 @@ def run_main():
     #
     # Create test net.
     #
-    # net = caffe.NetSpec()
-    # net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_size,
-    #         train=False, output_label=True, label_map_file=label_map_file,
-    #         transform_param=test_transform_param)
-    # VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,
-    #     dropout=False, freeze_layers=freeze_layers)
-    # AddExtraLayers(net, use_batchnorm)
-    # mbox_layers = CreateMultiBoxPoseHead(net, data_layer='data', from_layers=mbox_source_layers,
-    #         use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
-    #         aspect_ratios=aspect_ratios, normalizations=normalizations,
-    #         num_classes=num_classes, num_poses=num_poses, 
-    #         share_location=share_location, share_pose=share_pose,
-    #         flip=flip, clip=clip,
-    #         prior_variance=prior_variance, kernel_size=3, pad=1)
-    # conf_name = "mbox_conf"
-    # if multibox_pose_loss_param["conf_loss_type"] == caffe_pb2.ConfLossType.Value('ConfLossType_SOFTMAX'):
-    #   reshape_name = "{}_reshape".format(conf_name)
-    #   net[reshape_name] = L.Reshape(net[conf_name], shape=dict(dim=[0, -1, num_classes]))
-    #   softmax_name = "{}_softmax".format(conf_name)
-    #   net[softmax_name] = L.Softmax(net[reshape_name], axis=2)
-    #   flatten_name = "{}_flatten".format(conf_name)
-    #   net[flatten_name] = L.Flatten(net[softmax_name], axis=1)
-    #   mbox_layers[1] = net[flatten_name]
-    # elif multibox_pose_loss_param["conf_loss_type"] == caffe_pb2.ConfLossType.Value('ConfLossType_LOGISTIC'):
-    #   sigmoid_name = "{}_sigmoid".format(conf_name)
-    #   net[sigmoid_name] = L.Sigmoid(net[conf_name])
-    #   mbox_layers[1] = net[sigmoid_name]
-    # # Only consider Softmax right now 
-    # pose_name = "mbox_pose"
-    # reshape_name = "{}_reshape".format(pose_name)
-    # net[reshape_name] = L.Reshape(net[pose_name], shape=dict(dim=[0, -1, num_poses]))
-    # softmax_name = "{}_softmax".format(pose_name)
-    # net[softmax_name] = L.Softmax(net[reshape_name], axis=2)
-    # flatten_name = "{}_flatten".format(pose_name)
-    # net[flatten_name] = L.Flatten(net[softmax_name], axis=1)
-    # mbox_layers[2] = net[flatten_name]
-    # net.detection_out = L.DetectionPoseOutput(*mbox_layers,
-    #     detection_pose_output_param=det_out_param,
-    #     include=dict(phase=caffe_pb2.Phase.Value('TEST')))
-    # net.detection_eval = L.DetectionEvaluatePose(net.detection_out, net.label,
-    #     detection_evaluate_param=det_eval_param,
-    #     include=dict(phase=caffe_pb2.Phase.Value('TEST')))
-    # with open(test_net_file, 'w') as f:
-    #     print('name: "{}_test"'.format(model_name), file=f)
-    #     print(net.to_proto(), file=f)
-    # print('write test_net_file: {}'.format(test_net_file))
+    net = caffe.NetSpec()
+    net.data, net.label = CreateAnnotatedDataLayer(test_data, batch_size=test_batch_size,
+            train=False, output_label=True, label_map_file=label_map_file,
+            transform_param=test_transform_param)
+    VGGNetBody(net, from_layer='data', fully_conv=True, reduced=True, dilated=True,
+        dropout=False, freeze_layers=freeze_layers)
+    AddExtraLayers(net, use_batchnorm)
+    mbox_layers = CreateMultiBoxPoseHead(net, data_layer='data', from_layers=mbox_source_layers,
+            use_batchnorm=use_batchnorm, min_sizes=min_sizes, max_sizes=max_sizes,
+            aspect_ratios=aspect_ratios, normalizations=normalizations,
+            num_classes=num_classes, num_poses=num_poses, 
+            share_location=share_location, share_pose=share_pose,
+            flip=flip, clip=clip,
+            prior_variance=prior_variance, kernel_size=3, pad=1)
+    conf_name = "mbox_conf"
+    if multibox_pose_loss_param["conf_loss_type"] == caffe_pb2.ConfLossType.Value('ConfLossType_SOFTMAX'):
+      reshape_name = "{}_reshape".format(conf_name)
+      net[reshape_name] = L.Reshape(net[conf_name], shape=dict(dim=[0, -1, num_classes]))
+      softmax_name = "{}_softmax".format(conf_name)
+      net[softmax_name] = L.Softmax(net[reshape_name], axis=2)
+      flatten_name = "{}_flatten".format(conf_name)
+      net[flatten_name] = L.Flatten(net[softmax_name], axis=1)
+      mbox_layers[1] = net[flatten_name]
+    elif multibox_pose_loss_param["conf_loss_type"] == caffe_pb2.ConfLossType.Value('ConfLossType_LOGISTIC'):
+      sigmoid_name = "{}_sigmoid".format(conf_name)
+      net[sigmoid_name] = L.Sigmoid(net[conf_name])
+      mbox_layers[1] = net[sigmoid_name]
+    # Only consider Softmax right now 
+    pose_name = "mbox_pose"
+    reshape_name = "{}_reshape".format(pose_name)
+    net[reshape_name] = L.Reshape(net[pose_name], shape=dict(dim=[0, -1, num_poses]))
+    softmax_name = "{}_softmax".format(pose_name)
+    net[softmax_name] = L.Softmax(net[reshape_name], axis=2)
+    flatten_name = "{}_flatten".format(pose_name)
+    net[flatten_name] = L.Flatten(net[softmax_name], axis=1)
+    mbox_layers[2] = net[flatten_name]
+    net.detection_out = L.DetectionPoseOutput(*mbox_layers,
+        detection_pose_output_param=det_out_param,
+        include=dict(phase=caffe_pb2.Phase.Value('TEST')))
+    net.detection_eval = L.DetectionEvaluatePose(net.detection_out, net.label,
+        detection_evaluate_param=det_eval_param,
+        include=dict(phase=caffe_pb2.Phase.Value('TEST')))
+    with open(test_net_file, 'w') as f:
+        print('name: "{}_test"'.format(model_name), file=f)
+        print(net.to_proto(), file=f)
+    print('write test_net_file: {}'.format(test_net_file))
 
     #
     # Create deploy net.
