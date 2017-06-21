@@ -22,10 +22,10 @@ class VOCParser(object):
             o = {}
             o['name'] = node.find('name').text
             bndbox_node = node.find('bndbox')
-            xmin = float(bndbox_node.find('xmin').text)
-            xmax = float(bndbox_node.find('xmax').text)
-            ymin = float(bndbox_node.find('ymin').text)
-            ymax = float(bndbox_node.find('ymax').text)
+            xmin = int(float(bndbox_node.find('xmin').text))
+            xmax = int(float(bndbox_node.find('xmax').text))
+            ymin = int(float(bndbox_node.find('ymin').text))
+            ymax = int(float(bndbox_node.find('ymax').text))
             o['bbox'] = [xmin, ymin, xmax, ymax]
             objs.append(o)
         return objs
@@ -36,3 +36,6 @@ class VOCParser(object):
         hei = int(size_node.find('height').text)
         depth = int(size_node.find('depth').text)
         return hei, wid, depth
+
+    def image_name(self):
+        return self.tree.find('filename').text
