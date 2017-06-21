@@ -39,7 +39,7 @@ def get_labelname(labelmap, labels):
 
 
 model_def = 'models/pose/deploy.prototxt'
-model_weights = 'models/pose/VGG_SSD_share_pose_iter_26000.caffemodel'
+model_weights = 'models/pose/VGG_SSD_share_pose_iter_50000.caffemodel'
 
 net = caffe.Net(model_def,      # defines the structure of the model
                 model_weights,  # contains the trained weights
@@ -57,7 +57,8 @@ transformer.set_channel_swap('data', (2,1,0))  # the reference model has channel
 image_resize = 300
 net.blobs['data'].reshape(1,3,image_resize,image_resize)
 
-image = caffe.io.load_image('/Users/mac/datasets/facethink/gen/1017.jpg')
+image_path = sys.argv[1]
+image = caffe.io.load_image(image_path)
 plt.imshow(image)
 
 
@@ -81,7 +82,7 @@ det_poseScore = detections[0,0,:,8]
 # print(det_pose, det_poseScore)
 
 # Get detections with confidence higher than 0.6.
-top_indices = [i for i, conf in enumerate(det_conf) if conf >= 0.3]
+top_indices = [i for i, conf in enumerate(det_conf) if conf >= 0.5]
 
 top_conf = det_conf[top_indices]
 top_label_indices = det_label[top_indices].tolist()
@@ -96,7 +97,7 @@ top_poseScore = det_poseScore[top_indices]
 # draw result
 with open('data/pose/body_labels.txt') as f:
     pose_names = [l.strip() for l in f.readlines()] + ['Other']
-colors = plt.cm.hsv(np.linspace(0, 1, 10))
+colors = plt.cm.hsv(np.linspace(0, 1, 8))
 ax = plt.gca()
 for i in xrange(top_conf.shape[0]):
     xmin = int(round(top_xmin[i] * image.shape[1]))
@@ -105,15 +106,15 @@ for i in xrange(top_conf.shape[0]):
     ymax = int(round(top_ymax[i] * image.shape[0]))
     score = top_conf[i]
     label = top_labels[i]
-    pose_idx = top_pose[i]
+    pose_idx = int(top_pose[i])
     pose_score = top_poseScore[i]
     try:
-        name = '%s-%.2f'%(pose_names[int(pose_idx)], pose_score)
+        name = '%s-%.2f'%(pose_names[pose_idx], pose_score)
     except:
         print pose_names, pose_idx, pose_score
         sys.exit(1)
     coords = (xmin, ymin), xmax-xmin+1, ymax-ymin+1
-    color = colors[i % len(colors)]
+    color = colors[pose_idx % len(colors)]
     ax.add_patch(plt.Rectangle(*coords, fill=False, edgecolor=color, linewidth=2))
     ax.text(xmin, ymin, name, bbox={'facecolor':'white', 'alpha':0.5})
 plt.show()
