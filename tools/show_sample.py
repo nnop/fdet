@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 import _init_paths
 import dataset
-from voc_parser import VOCParser
+from vocparser import VOCParser
 from vis import draw_bbox
 
 def get_image_xml_paths(args):
